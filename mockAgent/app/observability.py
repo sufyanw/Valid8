@@ -77,6 +77,8 @@ def _configure_stdlib_logging(log_level: str) -> None:
         format="%(asctime)s %(levelname)s %(name)s %(message)s",
     )
     logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("httpcore").setLevel(logging.WARNING)
 
 
 def _configure_opentelemetry(app: FastAPI, settings: Settings) -> None:
