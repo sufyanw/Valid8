@@ -2,29 +2,29 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import L from "leaflet";
 
 const NEED_TAGS = [
-  { value: "mobility", label: "Mobility", detail: "Wheelchair, scooter, cane, walker, transfers", icon: "♿" },
-  { value: "vision", label: "Blind / low vision", detail: "Guide help, accessible information", icon: "👁️" },
-  { value: "hearing", label: "Deaf / hard of hearing", detail: "Visual communication, captions, alerts", icon: "🦻" },
-  { value: "sensory", label: "Sensory needs", detail: "Autism, quiet help, reduced overwhelm", icon: "🧩" },
-  { value: "cognitive", label: "Cognitive support", detail: "Plain instructions, extra guidance", icon: "📝" },
-  { value: "service_animal", label: "Service animal", detail: "Service dog or other trained animal", icon: "🐕‍🦺" },
-  { value: "medical", label: "Medical equipment", detail: "Medication, oxygen, CPAP, batteries", icon: "⚕️" },
-  { value: "other", label: "Other accessibility need", detail: "Use when none of the other tags fit", icon: "＋" },
+  { value: "mobility", label: "Mobility", detail: "Wheelchair, scooter, cane, walker, transfers", abbreviation: "MO" },
+  { value: "vision", label: "Blind or low vision", detail: "Guide help and accessible information", abbreviation: "VI" },
+  { value: "hearing", label: "Deaf or hard of hearing", detail: "Visual communication, captions, and alerts", abbreviation: "HE" },
+  { value: "sensory", label: "Sensory needs", detail: "Autism, quiet help, reduced overwhelm", abbreviation: "SE" },
+  { value: "cognitive", label: "Cognitive support", detail: "Plain instructions and extra guidance", abbreviation: "CO" },
+  { value: "service_animal", label: "Service animal", detail: "Service dog or other trained animal", abbreviation: "SA" },
+  { value: "medical", label: "Medical equipment", detail: "Medication, oxygen, CPAP, batteries", abbreviation: "ME" },
+  { value: "other", label: "Other accessibility need", detail: "Use when none of the other tags fit", abbreviation: "OT" },
 ];
 
 const TRANSPORT_OPTIONS = [
-  { value: "not_sure", label: "Recommend for me", icon: "✨", detail: "Compare available modes" },
-  { value: "air", label: "Flight", icon: "✈️", detail: "Airlines and airports" },
-  { value: "rail", label: "Train", icon: "🚆", detail: "Amtrak and stations" },
-  { value: "rideshare", label: "Taxi / rideshare", icon: "🚕", detail: "Local ride services" },
+  { value: "not_sure", label: "Recommend for me", detail: "Compare available modes" },
+  { value: "air", label: "Flight", detail: "Airlines and airports" },
+  { value: "rail", label: "Train", detail: "Amtrak and stations" },
+  { value: "rideshare", label: "Taxi or rideshare", detail: "Local ride services" },
 ];
 
 const DURATION_OPTIONS = [
   { id: "same_day", label: "Same day", days: 0.5, detail: "A few hours" },
-  { id: "overnight", label: "Overnight", days: 2, detail: "1–2 days" },
+  { id: "overnight", label: "Overnight", days: 2, detail: "1 to 2 days" },
   { id: "short_trip", label: "Short trip", days: 3, detail: "3 days" },
-  { id: "week", label: "About a week", days: 7, detail: "4–7 days" },
-  { id: "multi_day", label: "Longer trip", days: 10, detail: "8+ days" },
+  { id: "week", label: "About a week", days: 7, detail: "4 to 7 days" },
+  { id: "multi_day", label: "Longer trip", days: 10, detail: "8 or more days" },
 ];
 
 const DEFAULT_FORM = {
@@ -45,6 +45,7 @@ function App() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pollCount, setPollCount] = useState(0);
   const resultHeadingRef = useRef(null);
+  const errorRef = useRef(null);
 
   const selectedDuration = useMemo(
     () => DURATION_OPTIONS.find((option) => option.id === form.duration_id) || DURATION_OPTIONS[2],
@@ -55,6 +56,11 @@ function App() {
     [form.transport_mode],
   );
 
+  const selectedNeeds = useMemo(
+    () => form.quick_tags.map((tag) => NEED_TAGS.find((item) => item.value === tag)?.label || tag),
+    [form.quick_tags],
+  );
+
   const statusText = useMemo(() => {
     if (isSubmitting) return "Submitting your request.";
     if (jobStatus === "queued") return "Request queued.";
@@ -63,6 +69,12 @@ function App() {
     if (jobStatus === "failed") return "Recommendation failed.";
     return "";
   }, [isSubmitting, jobStatus]);
+
+  useEffect(() => {
+    if (error) {
+      window.setTimeout(() => errorRef.current?.focus(), 0);
+    }
+  }, [error]);
 
   useEffect(() => {
     if (!jobId || jobStatus === "succeeded" || jobStatus === "failed") {
@@ -108,11 +120,11 @@ function App() {
     setError("");
 
     if (form.quick_tags.length === 0) {
-      setError("Select at least one accessibility need.");
+      setError("Select at least one accessibility need before getting a recommendation.");
       return;
     }
     if (!form.origin || !form.destination) {
-      setError("Choose both an origin and a destination from the suggestions.");
+      setError("Choose both an origin and a destination from the location suggestion lists.");
       return;
     }
 
@@ -183,55 +195,80 @@ function App() {
       </a>
 
       <header className="site-header">
-        <div className="shell">
-          <h1>Accessible Travel Assistant</h1>
-          <p className="lede">
-            Choose your needs, route, transportation preference, and trip length. The app
-            ranks providers from a curated accessibility dataset and links to official
-            policy and booking pages.
-          </p>
+        <div className="shell hero">
+          <div>
+            <p className="kicker">Accessible trip planning</p>
+            <h1>Find a provider that fits your access needs.</h1>
+            <p className="lede">
+              Select your accessibility needs, route, travel mode, and trip length. We compare
+              a curated provider dataset and link only to official accessibility and booking pages.
+            </p>
+          </div>
+          <TripSummary
+            origin={form.origin}
+            destination={form.destination}
+            selectedNeeds={selectedNeeds}
+            selectedMode={selectedMode}
+            selectedDuration={selectedDuration}
+          />
         </div>
       </header>
 
       <main id="main-content" className="shell layout">
-        <section className="panel" aria-labelledby="form-title">
-          <h2 id="form-title">Plan your trip</h2>
+        <section className="panel form-panel" aria-labelledby="form-title">
+          <div className="section-heading">
+            <p className="section-eyebrow">Step 1</p>
+            <h2 id="form-title">Plan your trip</h2>
+          </div>
 
-          <form onSubmit={handleSubmit}>
-            <fieldset className="tag-group">
+          {error && <ErrorMessage message={error} ref={errorRef} />}
+
+          <form onSubmit={handleSubmit} noValidate>
+            <fieldset className="control-group">
               <legend>Accessibility needs</legend>
               <p className="helper" id="tag-help">
-                Select all that apply. No medical explanation is required.
+                Select all that apply. You do not need to type private medical details.
               </p>
               <div className="choice-grid" aria-describedby="tag-help">
-                {NEED_TAGS.map((tag) => (
-                  <button
-                    className={`choice-card ${form.quick_tags.includes(tag.value) ? "selected" : ""}`}
-                    key={tag.value}
-                    type="button"
-                    aria-pressed={form.quick_tags.includes(tag.value)}
-                    onClick={() => toggleTag(tag.value)}
-                  >
-                    <span className="choice-icon" aria-hidden="true">
-                      {tag.icon}
-                    </span>
-                    <span className="choice-title">{tag.label}</span>
-                    <span className="choice-detail">{tag.detail}</span>
-                  </button>
-                ))}
+                {NEED_TAGS.map((tag) => {
+                  const selected = form.quick_tags.includes(tag.value);
+                  return (
+                    <button
+                      className={`choice-card ${selected ? "selected" : ""}`}
+                      key={tag.value}
+                      type="button"
+                      aria-pressed={selected}
+                      onClick={() => toggleTag(tag.value)}
+                    >
+                      <span className="choice-abbrev" aria-hidden="true">
+                        {tag.abbreviation}
+                      </span>
+                      <span className="choice-copy">
+                        <span className="choice-title">{tag.label}</span>
+                        <span className="choice-detail">{tag.detail}</span>
+                      </span>
+                      <span className="selected-label" aria-hidden="true">
+                        {selected ? "Selected" : "Select"}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </fieldset>
 
-            <fieldset className="tag-group">
+            <fieldset className="control-group">
               <legend>Route</legend>
-              <div className="route-grid">
-                <LocationCombobox
+              <p className="helper" id="route-help">
+                Search by city, airport code, airport name, or supported Amtrak station.
+              </p>
+              <div className="route-grid" aria-describedby="route-help">
+                <LocationPicker
                   id="origin"
                   label="Origin"
                   value={form.origin}
                   onChange={(location) => updateField("origin", location)}
                 />
-                <LocationCombobox
+                <LocationPicker
                   id="destination"
                   label="Destination"
                   value={form.destination}
@@ -241,7 +278,7 @@ function App() {
               <RouteMap origin={form.origin} destination={form.destination} />
             </fieldset>
 
-            <fieldset className="tag-group">
+            <fieldset className="control-group">
               <legend>Transportation preference</legend>
               <div className="segmented-grid">
                 {TRANSPORT_OPTIONS.map((option) => (
@@ -252,9 +289,6 @@ function App() {
                     aria-pressed={form.transport_mode === option.value}
                     onClick={() => updateField("transport_mode", option.value)}
                   >
-                    <span className="choice-icon" aria-hidden="true">
-                      {option.icon}
-                    </span>
                     <span className="choice-title">{option.label}</span>
                     <span className="choice-detail">{option.detail}</span>
                   </button>
@@ -262,7 +296,7 @@ function App() {
               </div>
             </fieldset>
 
-            <fieldset className="tag-group">
+            <fieldset className="control-group">
               <legend>Trip duration</legend>
               <div className="segmented-grid duration-grid">
                 {DURATION_OPTIONS.map((option) => (
@@ -296,32 +330,33 @@ function App() {
                 disabled={isSubmitting || jobStatus === "running" || jobStatus === "queued"}
               >
                 {isSubmitting || jobStatus === "running" || jobStatus === "queued"
-                  ? "Working…"
+                  ? "Checking providers"
                   : "Get recommendation"}
               </button>
               <button type="button" className="secondary" onClick={resetForm}>
-                Clear
+                Clear form
               </button>
             </div>
           </form>
         </section>
 
         <section className="panel results-panel" aria-labelledby="results-title">
-          <h2 id="results-title" ref={resultHeadingRef} tabIndex="-1">
-            Results
-          </h2>
+          <div className="section-heading">
+            <p className="section-eyebrow">Step 2</p>
+            <h2 id="results-title" ref={resultHeadingRef} tabIndex="-1">
+              Results
+            </h2>
+          </div>
           <div className="status" role="status" aria-live="polite">
             {statusText}
           </div>
 
-          {error && <ErrorMessage message={error} />}
-
           {!error && !result && (
             <div className="empty-state">
-              <p>Results will appear here after you submit the form.</p>
+              <p>Recommendations will appear here after you submit the form.</p>
               <p>
-                The app may say “no strong match” if the curated dataset does not support
-                the selected need well enough.
+                If the dataset cannot support a selected need, the app will say so instead
+                of forcing a weak match.
               </p>
             </div>
           )}
@@ -332,19 +367,46 @@ function App() {
 
       <footer className="shell site-footer">
         <p>
-          Safety note: always confirm accommodations directly before booking. Provider
-          policies and local service availability can change.
+          Accommodation policies and local service availability can change. Confirm details
+          directly with the provider before booking.
         </p>
       </footer>
     </>
   );
 }
 
-function LocationCombobox({ id, label, value, onChange }) {
+function TripSummary({ origin, destination, selectedNeeds, selectedMode, selectedDuration }) {
+  return (
+    <aside className="trip-summary" aria-label="Current trip selections">
+      <h2>Your selections</h2>
+      <dl>
+        <div>
+          <dt>Needs</dt>
+          <dd>{selectedNeeds.length ? selectedNeeds.join(", ") : "None selected"}</dd>
+        </div>
+        <div>
+          <dt>Route</dt>
+          <dd>{routeSummary(origin, destination)}</dd>
+        </div>
+        <div>
+          <dt>Mode</dt>
+          <dd>{selectedMode.label}</dd>
+        </div>
+        <div>
+          <dt>Duration</dt>
+          <dd>{selectedDuration.label}</dd>
+        </div>
+      </dl>
+    </aside>
+  );
+}
+
+function LocationPicker({ id, label, value, onChange }) {
   const [query, setQuery] = useState(value ? displayLocation(value) : "");
   const [suggestions, setSuggestions] = useState([]);
-  const [isOpen, setIsOpen] = useState(false);
-  const listboxId = `${id}-suggestions`;
+  const selectId = `${id}-results`;
+  const helpId = `${id}-help`;
+  const selectionId = `${id}-selection`;
 
   useEffect(() => {
     setQuery(value ? displayLocation(value) : "");
@@ -374,48 +436,54 @@ function LocationCombobox({ id, label, value, onChange }) {
 
   function handleInput(event) {
     setQuery(event.target.value);
-    setIsOpen(true);
     if (value) onChange(null);
   }
 
-  function selectLocation(location) {
-    onChange(location);
-    setQuery(displayLocation(location));
-    setIsOpen(false);
+  function handleSelect(event) {
+    const location = suggestions.find((item) => item.id === event.target.value);
+    if (location) {
+      onChange(location);
+      setQuery(displayLocation(location));
+    }
   }
 
   return (
-    <div className="combobox">
+    <div className="location-picker">
       <label htmlFor={id}>{label}</label>
       <input
         id={id}
         type="search"
         value={query}
-        role="combobox"
-        aria-autocomplete="list"
-        aria-expanded={isOpen}
-        aria-controls={listboxId}
         autoComplete="off"
-        placeholder="Search city, airport code, or station"
+        placeholder="Example: LAX, Seattle, Penn Station"
+        aria-describedby={`${helpId} ${selectionId}`}
         onChange={handleInput}
-        onFocus={() => setIsOpen(true)}
-        onBlur={() => window.setTimeout(() => setIsOpen(false), 160)}
       />
-      {isOpen && suggestions.length > 0 && (
-        <ul className="suggestions" id={listboxId} role="listbox">
-          {suggestions.map((location) => (
-            <li key={location.id} role="option" aria-selected={value?.id === location.id}>
-              <button type="button" onMouseDown={() => selectLocation(location)}>
-                <span className="suggestion-code">{location.code}</span>
-                <span>
-                  <strong>{location.city}, {location.state}</strong>
-                  <small>{location.name}</small>
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+      <p className="field-help" id={helpId}>
+        Type at least one letter, then choose from the suggestion list.
+      </p>
+      <label className="sr-only" htmlFor={selectId}>
+        {label} suggestions
+      </label>
+      <select
+        id={selectId}
+        className="suggestion-select"
+        size={Math.min(5, Math.max(2, suggestions.length || 2))}
+        value={value?.id || ""}
+        onChange={handleSelect}
+      >
+        <option value="" disabled>
+          {suggestions.length ? `Choose ${label.toLowerCase()}` : "No matching locations"}
+        </option>
+        {suggestions.map((location) => (
+          <option key={location.id} value={location.id}>
+            {location.code} - {location.city}, {location.state} - {location.name}
+          </option>
+        ))}
+      </select>
+      <p className="selected-location" id={selectionId}>
+        Selected: {value ? `${value.name}, ${value.city}, ${value.state}` : "none"}
+      </p>
     </div>
   );
 }
@@ -429,14 +497,16 @@ function RouteMap({ origin, destination }) {
     if (!mapElementRef.current || mapRef.current) return;
 
     mapRef.current = L.map(mapElementRef.current, {
+      attributionControl: false,
       center: [39.5, -98.35],
-      zoom: 4,
+      keyboard: false,
       scrollWheelZoom: false,
+      zoom: 4,
+      zoomControl: false,
     });
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 18,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
     }).addTo(mapRef.current);
 
     layerRef.current = L.layerGroup().addTo(mapRef.current);
@@ -466,7 +536,7 @@ function RouteMap({ origin, destination }) {
           [origin.lat, origin.lng],
           [destination.lat, destination.lng],
         ],
-        { color: "#153e75", weight: 4, opacity: 0.8 },
+        { color: "#123c69", weight: 4, opacity: 0.85 },
       ).addTo(layerRef.current);
       mapRef.current.fitBounds(line.getBounds(), { padding: [42, 42], maxZoom: 6 });
     } else if (points.length === 1) {
@@ -476,16 +546,34 @@ function RouteMap({ origin, destination }) {
     }
   }, [origin, destination]);
 
+  function zoomIn() {
+    mapRef.current?.zoomIn();
+  }
+
+  function zoomOut() {
+    mapRef.current?.zoomOut();
+  }
+
   return (
     <div className="map-card">
-      <div
-        ref={mapElementRef}
-        className="route-map"
-        aria-label="Interactive route map showing selected origin and destination"
-      />
+      <div className="map-toolbar" aria-label="Map controls">
+        <div>
+          <h3>Route preview</h3>
+          <p>{routeSummary(origin, destination)}</p>
+        </div>
+        <div className="map-actions">
+          <button type="button" className="small-button" onClick={zoomIn}>
+            Zoom in
+          </button>
+          <button type="button" className="small-button" onClick={zoomOut}>
+            Zoom out
+          </button>
+        </div>
+      </div>
+      <div ref={mapElementRef} className="route-map" aria-hidden="true" />
       <p className="map-helper">
-        Pan or zoom the map. Search supports common US airport codes, city names, and a few
-        major Amtrak stations.
+        The map is a visual aid. The selected origin and destination are provided in text above.
+        Map data from OpenStreetMap.
       </p>
     </div>
   );
@@ -565,7 +653,7 @@ function ProviderCard({ provider }) {
         <div>
           <h4>{provider.provider_name}</h4>
           <p>
-            {provider.mode} · Match score {provider.score}/100
+            {provider.mode} provider. Match score {provider.score} out of 100.
           </p>
         </div>
       </div>
@@ -604,14 +692,14 @@ function ProviderCard({ provider }) {
   );
 }
 
-function ErrorMessage({ message }) {
+const ErrorMessage = React.forwardRef(function ErrorMessage({ message }, ref) {
   return (
-    <div className="error" role="alert">
+    <div className="error" role="alert" tabIndex="-1" ref={ref}>
+      <h3>Fix this before continuing</h3>
       <p>{message}</p>
-      <p>If this keeps happening, confirm the API key and try again later.</p>
     </div>
   );
-}
+});
 
 async function parseApiResponse(response) {
   let data = {};
@@ -640,7 +728,20 @@ function buildNeedSummary(tags) {
 
 function displayLocation(location) {
   if (!location) return "";
-  return `${location.code} — ${location.city}, ${location.state}`;
+  return `${location.code} - ${location.city}, ${location.state}`;
+}
+
+function routeSummary(origin, destination) {
+  if (origin && destination) {
+    return `${displayLocation(origin)} to ${displayLocation(destination)}`;
+  }
+  if (origin) {
+    return `${displayLocation(origin)} to destination not selected`;
+  }
+  if (destination) {
+    return `Origin not selected to ${displayLocation(destination)}`;
+  }
+  return "Origin and destination not selected";
 }
 
 function humanizeStatus(status) {
