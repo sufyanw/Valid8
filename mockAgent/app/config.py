@@ -31,6 +31,12 @@ class Settings:
     providers_path: Path
     frontend_dist_dir: Path
     cors_origins: tuple[str, ...]
+    log_level: str
+    otel_enabled: bool
+    otel_service_name: str
+    otel_environment: str
+    otel_exporter_otlp_endpoint: str | None
+    otel_exporter_otlp_headers: str | None
 
 
 @lru_cache
@@ -59,4 +65,10 @@ def get_settings() -> Settings:
             os.getenv("FRONTEND_DIST_DIR", str(PROJECT_ROOT / "frontend" / "dist"))
         ),
         cors_origins=tuple(origin.strip() for origin in cors_raw.split(",") if origin.strip()),
+        log_level=os.getenv("LOG_LEVEL", "INFO").upper(),
+        otel_enabled=_as_bool(os.getenv("OTEL_ENABLED"), default=True),
+        otel_service_name=os.getenv("OTEL_SERVICE_NAME", "accessible-travel-assistant"),
+        otel_environment=os.getenv("OTEL_ENVIRONMENT", os.getenv("HEROKU_APP_NAME", "local")),
+        otel_exporter_otlp_endpoint=os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT"),
+        otel_exporter_otlp_headers=os.getenv("OTEL_EXPORTER_OTLP_HEADERS"),
     )
