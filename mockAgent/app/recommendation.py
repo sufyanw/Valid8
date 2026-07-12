@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+from pathlib import Path
 from typing import Iterable
 
 from pydantic import ValidationError
@@ -24,8 +25,40 @@ DISCLAIMER = (
     "the provider before booking."
 )
 
+_FEATURE_FLAGS_PATH = Path(__file__).resolve().parents[1] / "config" / "feature_flags.json"
+
+
+def read_feature_flags() -> dict:
+    try:
+        with open(_FEATURE_FLAGS_PATH) as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {"force_failure": False}
+
+
+def write_feature_flags(flags: dict) -> dict:
+    """Persists to the committed config file (not an env var) so flipping a
+    flag produces a real, citable git diff for 4sight to reason over."""
+    current = read_feature_flags()
+    current.update(flags)
+    with open(_FEATURE_FLAGS_PATH, "w") as f:
+        json.dump(current, f, indent=2)
+        f.write("\n")
+    return current
+
+
+def _force_failure_enabled() -> bool:
+    """Demo/testing lever for 4sight: when true, every recommendation
+    request fails deterministically."""
+    return bool(read_feature_flags().get("force_failure", False))
+
 
 async def recommend(payload: RecommendationRequest) -> RecommendationResult:
+    if _force_failure_enabled():
+        raise RuntimeError(
+            "Simulated failure: force_failure is enabled in config/feature_flags.json"
+        )
+
     settings = get_settings()
     providers = load_providers()
 

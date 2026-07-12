@@ -8,14 +8,16 @@ from fastapi import Depends, FastAPI, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
 
+from app import tracing
 from app.config import get_settings
 from app.jobs import JobStore
 from app.locations import search_locations
 from app.observability import add_request_logging, setup_observability
 from app.providers import load_providers
 from app.rate_limit import InMemoryRateLimiter
-from app.recommendation import recommend
+from app.recommendation import read_feature_flags, recommend, write_feature_flags
 from app.schemas import JobCreateResponse, JobStatusResponse, RecommendationRequest
 
 
@@ -67,6 +69,26 @@ async def locations(q: str = Query(default="", max_length=80)) -> dict:
     return {"locations": [location.model_dump() for location in search_locations(q)]}
 
 
+class FeatureFlagsUpdate(BaseModel):
+    force_failure: bool | None = None
+
+
+@app.get("/api/feature-flags")
+async def get_feature_flags() -> dict:
+    return read_feature_flags()
+
+
+@app.put("/api/feature-flags")
+async def update_feature_flags(update: FeatureFlagsUpdate) -> dict:
+    """Toggle demo/testing levers (e.g. force_failure) via API instead of
+    hand-editing config/feature_flags.json. Same underlying committed file,
+    so 4sight's git-diff evidence still works whether it was edited here or
+    by hand -- this endpoint acts as both the regression trigger (set true)
+    and the fix (set false), so the watcher sees a real recovery afterward."""
+    changes = {k: v for k, v in update.model_dump().items() if v is not None}
+    return write_feature_flags(changes)
+
+
 @app.post(
     "/api/recommend",
     response_model=JobCreateResponse,
@@ -85,6 +107,15 @@ async def create_recommendation(payload: RecommendationRequest) -> JobCreateResp
             "destination_code": payload.destination.code if payload.destination else None,
         },
     )
+    tracing.write_span(
+        job.job_id,
+        "request_received",
+        content=(
+            f"needs={','.join(payload.quick_tags) or 'none'}; "
+            f"modes={','.join(payload.transport_modes) or 'not_sure'}; "
+            f"duration={payload.trip_duration or 'unknown'}"
+        ),
+    )
     asyncio.create_task(_run_recommendation_job(job.job_id, payload))
     return JobCreateResponse(job_id=job.job_id, status="queued")
 
@@ -97,12 +128,29 @@ async def get_recommendation(job_id: str) -> JobStatusResponse:
 async def _run_recommendation_job(job_id: str, payload: RecommendationRequest) -> None:
     await job_store.set_running(job_id)
     setup_logger.info("recommendation_job_started", extra={"job_id": job_id})
+    tracing.write_span(
+        job_id,
+        "processing_started",
+        content=(
+            "Fake local recommendation path"
+            if get_settings().allow_fake_llm
+            else f"Dispatching to Gemini ({get_settings().gemini_model})"
+        ),
+    )
     try:
         result = await recommend(payload)
     except Exception as exc:  # noqa: BLE001 - user-facing failure state is intentional here.
         setup_logger.exception(
             "recommendation_job_failed",
             extra={"job_id": job_id, "error_type": type(exc).__name__},
+        )
+        tracing.write_span(
+            job_id,
+            "final_response",
+            status="error",
+            status_code=500,
+            content=str(exc),
+            error_type=type(exc).__name__,
         )
         await job_store.set_failed(job_id, _friendly_error(exc))
         return
@@ -113,6 +161,18 @@ async def _run_recommendation_job(job_id: str, payload: RecommendationRequest) -
             "result_status": result.status,
             "provider_count": len(result.providers),
         },
+    )
+    tracing.write_span(
+        job_id,
+        "validation_passed",
+        content=f"Recommendation validated against curated dataset: {len(result.providers)} provider(s) matched",
+    )
+    tracing.write_span(
+        job_id,
+        "final_response",
+        status="ok",
+        status_code=200,
+        content=f"status={result.status}, providers={len(result.providers)}",
     )
     await job_store.set_succeeded(job_id, result)
 

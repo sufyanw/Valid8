@@ -11,8 +11,11 @@ export async function POST(request: Request) {
 
   if (typeof repoPath !== "string" || !repoPath.trim()) {
     return Response.json(
-      { error: "Enter a repository path.", code: "INVALID_REQUEST" } satisfies ApiError,
-      { status: 400 },
+      {
+        error: "Enter a repository path.",
+        code: "INVALID_REQUEST",
+      } satisfies ApiError,
+      { status: 400 }
     )
   }
 
@@ -21,4 +24,8 @@ export async function POST(request: Request) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ repo_path: repoPath.trim() }),
   })
+}
+
+export async function DELETE() {
+  return proxyBackend("/watch", { method: "DELETE" })
 }

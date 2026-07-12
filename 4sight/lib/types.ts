@@ -41,6 +41,9 @@ export interface LogSpan {
   content: string | null
   tool: string | null
   timestamp: string
+  status?: string | null
+  status_code?: number | null
+  error_type?: string | null
 }
 
 export interface WatchStatus {
@@ -50,10 +53,19 @@ export interface WatchStatus {
   known_tools: string[]
   baseline_run_id: string | null
   latest_investigation: TriggeredInvestigation | null
+  active_investigation: {
+    triggered_run_id: string
+    triggered_at: string
+    anomaly_reason: string | null
+  } | null
 }
 
 export interface ApiError {
   error: string
-  code: "BACKEND_NOT_READY" | "BACKEND_UNAVAILABLE" | "BACKEND_ERROR" | "INVALID_REQUEST"
+  code:
+    | "BACKEND_NOT_READY"
+    | "BACKEND_UNAVAILABLE"
+    | "BACKEND_ERROR"
+    | "INVALID_REQUEST"
   backend_status?: number
 }

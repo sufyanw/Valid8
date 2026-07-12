@@ -47,6 +47,21 @@ Respond with ONLY valid JSON, no prose, matching this shape:
 }
 """
 
+SYSTEM_PROMPT_WITH_TOOLS = SYSTEM_PROMPT + """
+You also have git_log and git_show tools for the repo this incident came
+from. deploy_diff only shows one commit or the current uncommitted change --
+if it doesn't fully explain trace_b's failure, call git_log to see recent
+history and git_show to inspect any commit that looks relevant before
+answering. Don't call tools if deploy_diff already explains the failure.
+
+When your evidence comes from a tool result rather than trace_a/trace_b/
+deploy_diff, each tool response tells you the exact "source" string to use
+for that evidence item -- copy it exactly.
+
+Once you have enough evidence, respond with ONLY the final JSON object (no
+further tool calls, no prose) in the shape described above.
+"""
+
 
 @dataclass
 class Evidence:
@@ -112,7 +127,10 @@ def _parse_json_response(text):
         raise
 
 
-def _call_llm(trace_a, trace_b, deploy_diff, retry_note=None):
+MAX_TOOL_ROUNDS = 3
+
+
+def _call_llm(trace_a, trace_b, deploy_diff, retry_note=None, repo_path=None):
     from openai import OpenAI
 
     client = OpenAI(
@@ -126,29 +144,81 @@ def _call_llm(trace_a, trace_b, deploy_diff, retry_note=None):
     if retry_note:
         user_content += f"\n\n{retry_note}"
 
+    system_prompt = SYSTEM_PROMPT_WITH_TOOLS if repo_path else SYSTEM_PROMPT
     messages = [
-        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "system", "content": system_prompt},
         {"role": "user", "content": user_content},
     ]
 
-    try:
-        response = client.chat.completions.create(
-            model=OPENROUTER_MODEL,
-            max_tokens=4000,
-            messages=messages,
-            response_format={"type": "json_object"},
-        )
-    except Exception:
-        # Some providers reject response_format for this model -- retry
-        # without it rather than failing the whole investigation.
-        response = client.chat.completions.create(
-            model=OPENROUTER_MODEL,
-            max_tokens=4000,
-            messages=messages,
-        )
+    if not repo_path:
+        try:
+            response = client.chat.completions.create(
+                model=OPENROUTER_MODEL,
+                max_tokens=4000,
+                messages=messages,
+                response_format={"type": "json_object"},
+            )
+        except Exception:
+            # Some providers reject response_format for this model -- retry
+            # without it rather than failing the whole investigation.
+            response = client.chat.completions.create(
+                model=OPENROUTER_MODEL,
+                max_tokens=4000,
+                messages=messages,
+            )
+        return _parse_json_response(response.choices[0].message.content), {}
 
-    text = response.choices[0].message.content
-    return _parse_json_response(text)
+    from engine.git_tools import TOOL_SCHEMAS, call_tool
+
+    extra_sources = {}
+    message = None
+
+    for round_num in range(MAX_TOOL_ROUNDS + 1):
+        response = client.chat.completions.create(
+            model=OPENROUTER_MODEL,
+            max_tokens=4000,
+            messages=messages,
+            tools=TOOL_SCHEMAS,
+        )
+        message = response.choices[0].message
+        tool_calls = getattr(message, "tool_calls", None)
+
+        if not tool_calls or round_num == MAX_TOOL_ROUNDS:
+            break
+
+        messages.append(
+            {
+                "role": "assistant",
+                "content": message.content or "",
+                "tool_calls": [
+                    {
+                        "id": tc.id,
+                        "type": "function",
+                        "function": {"name": tc.function.name, "arguments": tc.function.arguments},
+                    }
+                    for tc in tool_calls
+                ],
+            }
+        )
+        for tc in tool_calls:
+            try:
+                args = json.loads(tc.function.arguments or "{}")
+            except json.JSONDecodeError:
+                args = {}
+            result_text = call_tool(repo_path, tc.function.name, args)
+            source_key = f"{tc.function.name}:{args.get('commit_hash') or round_num}"
+            extra_sources[source_key] = result_text
+            messages.append(
+                {
+                    "role": "tool",
+                    "tool_call_id": tc.id,
+                    "content": f'(cite this as source="{source_key}")\n{result_text}',
+                }
+            )
+
+    if not message.content:
+        raise ValueError("Model ended without a final JSON answer (empty content).")
+    return _parse_json_response(message.content), extra_sources
 
 
 def _stub_response():
@@ -171,8 +241,13 @@ def _stub_response():
     }
 
 
-def _verify_and_build(raw, trace_a, trace_b, deploy_diff):
-    sources = {"trace_a": trace_a, "trace_b": trace_b, "deploy_diff": deploy_diff}
+def _verify_and_build(raw, sources):
+    """sources: dict of source_key -> full text that key is allowed to cite
+    from. An evidence item is valid if its excerpt is a verbatim substring
+    of the source text it claims -- or, failing that, of ANY known source,
+    in which case it's relabeled to the source it actually came from rather
+    than rejected outright (the model can mislabel which tool result an
+    excerpt came from without the claim itself being ungrounded)."""
     hypotheses = []
     dropped = 0
 
@@ -181,9 +256,15 @@ def _verify_and_build(raw, trace_a, trace_b, deploy_diff):
         for e in h.get("evidence", []):
             source = e.get("source")
             excerpt = e.get("excerpt", "")
-            doc = sources.get(source, "")
-            if excerpt and excerpt in doc:
+            if not excerpt:
+                continue
+            if source in sources and excerpt in sources[source]:
                 valid_evidence.append(Evidence(source=source, excerpt=excerpt))
+                continue
+            for true_source, doc in sources.items():
+                if excerpt in doc:
+                    valid_evidence.append(Evidence(source=true_source, excerpt=excerpt))
+                    break
         if valid_evidence:
             hypotheses.append(
                 Hypothesis(
@@ -203,20 +284,28 @@ MAX_ATTEMPTS = 2
 
 
 def investigate(fixtures_dir):
-    """Fixture-backed entry point (used by main.py / the static report)."""
+    """Fixture-backed entry point (used by main.py / the static report).
+    No repo_path -- git tools stay disabled, identical to pre-tool-calling
+    behavior."""
     trace_a, trace_b, deploy_diff = _load_fixtures(fixtures_dir)
     return investigate_from_evidence(trace_a, trace_b, deploy_diff)
 
 
-def investigate_from_evidence(trace_a, trace_b, deploy_diff):
+def investigate_from_evidence(trace_a, trace_b, deploy_diff, repo_path=None):
     """Core entry point: evidence text in, Investigation out. Used by both
     the fixture-backed investigate() and the live watcher, so the live
     monitoring path exercises exactly the same LLM call, retry, and
-    citation-verification logic that was already tested against fixtures."""
+    citation-verification logic that was already tested against fixtures.
+
+    If repo_path is given, the model additionally gets git_log/git_show
+    tools scoped to that repo, so it can look past the single pre-fetched
+    deploy_diff when that alone doesn't explain the failure."""
+
+    base_sources = {"trace_a": trace_a, "trace_b": trace_b, "deploy_diff": deploy_diff}
 
     if not os.environ.get("OPENROUTER_API_KEY"):
         raw = _stub_response()
-        hypotheses, dropped = _verify_and_build(raw, trace_a, trace_b, deploy_diff)
+        hypotheses, dropped = _verify_and_build(raw, base_sources)
         return Investigation(
             incident_summary=raw.get("incident_summary", ""),
             hypotheses=hypotheses,
@@ -232,11 +321,13 @@ def investigate_from_evidence(trace_a, trace_b, deploy_diff):
 
     for attempt in range(1, MAX_ATTEMPTS + 1):
         try:
-            raw = _call_llm(trace_a, trace_b, deploy_diff, retry_note=retry_note)
+            raw, extra_sources = _call_llm(
+                trace_a, trace_b, deploy_diff, retry_note=retry_note, repo_path=repo_path
+            )
         except (json.JSONDecodeError, Exception) as exc:
             # Malformed response (bad JSON, API hiccup, etc). Treat as a
             # failed attempt and retry once rather than crashing outright.
-            raw = {}
+            raw, extra_sources = {}, {}
             hypotheses, dropped = [], 0
             if attempt == MAX_ATTEMPTS:
                 raise RuntimeError(
@@ -247,7 +338,8 @@ def investigate_from_evidence(trace_a, trace_b, deploy_diff):
             )
             continue
 
-        hypotheses, dropped = _verify_and_build(raw, trace_a, trace_b, deploy_diff)
+        sources = {**base_sources, **extra_sources}
+        hypotheses, dropped = _verify_and_build(raw, sources)
 
         if hypotheses or attempt == MAX_ATTEMPTS:
             break

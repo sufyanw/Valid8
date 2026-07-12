@@ -162,3 +162,17 @@ Actual moat candidates identified:
 3. **Trust built through track record** — once an on-call engineer has seen 4sight be right and verifiable across multiple real incidents, replacing it carries a workflow/trust switching cost beyond a feature comparison.
 
 **Status: RESOLVED.** Vision stays broad for positioning; wedge stays narrow (Baraa, agent non-determinism) for what actually ships and gets validated next; moat framing corrected to (1) evidence-verification technique, (2) per-customer incident history accumulation, (3) trust/track record — not MTTR savings, which is the value prop, not the defensibility.
+
+---
+
+### Live-Monitoring Architecture — Built and Verified
+
+Built `mvp/watcher.py` (background thread tailing a target repo's `.4sight/traces.jsonl`, grouping spans by `run_id`) and extended `mvp/server.py` with `POST /watch` (start monitoring a repo path), `GET /status` (poll for log tail + auto-triggered investigation), and `POST /investigate/now` (manual override, falls back to fixtures if no live data yet).
+
+**Anomaly rule implemented as designed:** a completed run is anomalous if a `reasoning` span mentions a tool that has been successfully called in some prior run (so it's real, not hallucinated), but no matching `tool_call` span appears in this run before its `final_response`. Baseline = most recent non-anomalous completed run. Deploy evidence = live `git diff` (uncommitted changes, falling back to the latest commit's patch) pulled directly from the watched repo — no more static `deploy_diff.txt`.
+
+**Verified end-to-end, twice:**
+1. Direct module test (stub mode, no API key) against a hand-built synthetic git repo: healthy run correctly became baseline, anomalous run correctly triggered investigation with the correct `offending_tool`, and — notably — the stub's canned fake evidence was correctly *rejected* by verification because it didn't match the live run's actual content. Confirms the verification logic doesn't blindly trust anything, not even the engine's own stub fallback.
+2. Full HTTP path through the real server with a live OpenRouter call: `POST /watch` → wrote a healthy run to the log file → confirmed baseline via `GET /status` → committed a real policy-softening change to the test repo → wrote an anomalous run → polled `/status` until `latest_investigation` appeared. Completed in 15 seconds this run (much faster than the >2min seen earlier — free-tier latency is inconsistent, plan demo pacing accordingly). Top hypothesis (90% confidence) correctly identified the real committed diff as root cause, citing exact before/after lines plus the matching reasoning-span text. Zero hypotheses dropped.
+
+**Not yet done:** the actual demo target app. Discussed adapting `mockAgent` (real Gemini-backed app already in the repo, but currently has no tool-calling step at all — single-shot LLM call, no intent/action-mismatch scenario possible as built) vs. building a small standalone synthetic script purpose-built to emit the right trace format. Decision deferred — mockAgent would need ~30-40 lines added to `recommendation.py` plus JSONL span logging to match; open question is whether that's worth it vs. a simpler standalone script, and whether the other dev working in parallel is already covering this.
