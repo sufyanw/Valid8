@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 
 import httpx
 
@@ -50,6 +51,10 @@ class GeminiClient:
         async with httpx.AsyncClient(timeout=self.timeout_seconds) as client:
             for attempt in range(3):
                 try:
+                    logging.getLogger("accessible_travel_assistant").info(
+                        "gemini_request_started",
+                        extra={"gemini_model": self.model, "attempt": attempt + 1},
+                    )
                     response = await client.post(url, params={"key": self.api_key}, json=body)
 
                     if response.status_code == 400:
@@ -77,6 +82,10 @@ class GeminiClient:
                 except httpx.HTTPError as exc:
                     last_error = exc
                     response = None
+                    logging.getLogger("accessible_travel_assistant").warning(
+                        "gemini_request_retryable_error",
+                        extra={"gemini_model": self.model, "attempt": attempt + 1},
+                    )
 
                 if attempt < 2:
                     await asyncio.sleep(0.8 * (attempt + 1))
@@ -85,11 +94,19 @@ class GeminiClient:
             raise GeminiResponseError("Gemini API request failed before receiving a response.") from last_error
 
         if response.status_code >= 400:
+            logging.getLogger("accessible_travel_assistant").warning(
+                "gemini_request_failed",
+                extra={"gemini_model": self.model, "http_status_code": response.status_code},
+            )
             raise GeminiResponseError(
                 f"Gemini API returned HTTP {response.status_code}: {response.text[:300]}"
             )
 
         data = response.json()
+        logging.getLogger("accessible_travel_assistant").info(
+            "gemini_request_succeeded",
+            extra={"gemini_model": self.model, "http_status_code": response.status_code},
+        )
         try:
             return data["candidates"][0]["content"]["parts"][0]["text"]
         except (KeyError, IndexError, TypeError) as exc:
