@@ -1,0 +1,28 @@
+{
+  "run_id": "run-2026-07-01-A",
+  "label": "healthy",
+  "deploy_version": "v1.2.0",
+  "timestamp": "2026-07-01T14:03:11Z",
+  "agent": "support-agent",
+  "user_request": "Hi, can you check on order #4521? It's been 5 days and I haven't heard anything.",
+  "spans": [
+    {
+      "span_id": "a-1",
+      "type": "reasoning",
+      "content": "User wants order status. I must call lookup_order_status to get current status before responding."
+    },
+    {
+      "span_id": "a-2",
+      "type": "tool_call",
+      "tool": "lookup_order_status",
+      "input": { "order_id": "4521" },
+      "output": { "status": "In Transit", "eta": "2026-07-03" },
+      "latency_ms": 214
+    },
+    {
+      "span_id": "a-3",
+      "type": "final_response",
+      "content": "Your order #4521 is currently in transit and expected to arrive by July 3."
+    }
+  ]
+}

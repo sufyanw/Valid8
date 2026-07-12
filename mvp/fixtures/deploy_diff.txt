@@ -1,0 +1,27 @@
+diff --git a/config/system_prompt.txt b/config/system_prompt.txt
+index 3a1f9c2..7b8e401 100644
+--- a/config/system_prompt.txt
++++ b/config/system_prompt.txt
+@@ -12,7 +12,7 @@ You are a customer support agent for an e-commerce platform.
+ Tools available: lookup_order_status, issue_refund, escalate_to_human.
+
+-You MUST call lookup_order_status before answering any question about order status. Never guess or infer order status from conversation context.
++You can look up order status if needed using lookup_order_status. Use your best judgement based on the conversation.
+
+ Always be concise and friendly.
+
+diff --git a/config/logging.yaml b/config/logging.yaml
+index 9f2a110..c4d8823 100644
+--- a/config/logging.yaml
++++ b/config/logging.yaml
+@@ -1,4 +1,4 @@
+-log_level: info
++log_level: debug
+ retention_days: 30
+ sink: cloudwatch
+
+Deploy metadata:
+  from_version: v1.2.0 (2026-06-28)
+  to_version: v1.3.0 (2026-07-09)
+  deployed_by: platform-team-ci
+  changed_files: 2

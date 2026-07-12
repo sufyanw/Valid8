@@ -1,0 +1,20 @@
+{
+  "run_id": "run-2026-07-10-B",
+  "label": "failing",
+  "deploy_version": "v1.3.0",
+  "timestamp": "2026-07-10T09:41:52Z",
+  "agent": "support-agent",
+  "user_request": "Hey, what's going on with order #7788? Still hasn't arrived.",
+  "spans": [
+    {
+      "span_id": "b-1",
+      "type": "reasoning",
+      "content": "User is asking about their order. I can look up order status if needed using lookup_order_status, but I already have context suggesting it's likely still processing."
+    },
+    {
+      "span_id": "b-2",
+      "type": "final_response",
+      "content": "Your order #7788 is likely still processing and should arrive soon."
+    }
+  ]
+}
