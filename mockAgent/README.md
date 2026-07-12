@@ -69,13 +69,14 @@ heroku config:set GEMINI_MODEL="gemini-flash-latest"
 heroku config:set OTEL_ENABLED=true
 heroku config:set OTEL_SERVICE_NAME=accessible-travel-assistant
 heroku config:set OTEL_ENVIRONMENT=production
+heroku config:set WEB_CONCURRENCY=1
 # Optional, if you have an OTLP log/trace backend:
 heroku config:set OTEL_EXPORTER_OTLP_ENDPOINT="https://your-otlp-http-endpoint"
 heroku config:set OTEL_EXPORTER_OTLP_HEADERS="Authorization=Bearer your-token"
 git push heroku main
 ```
 
-The root `.python-version` file pins the Python major runtime for Heroku. The root `heroku-postbuild` script builds the Vite app into `frontend/dist`, and FastAPI serves that directory.
+The root `.python-version` file pins the Python major runtime for Heroku. The Procfile forces one Uvicorn worker because v1 uses an in-memory async job store. The root `heroku-postbuild` script builds the Vite app into `frontend/dist`, and FastAPI serves that directory.
 
 ## Provider dataset notes
 
