@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from pathlib import Path
 
 from fastapi import Depends, FastAPI, Query, Request
@@ -11,6 +12,7 @@ from fastapi.staticfiles import StaticFiles
 from app.config import get_settings
 from app.jobs import JobStore
 from app.locations import search_locations
+from app.observability import add_request_logging, setup_observability
 from app.providers import load_providers
 from app.rate_limit import InMemoryRateLimiter
 from app.recommendation import recommend
@@ -18,6 +20,7 @@ from app.schemas import JobCreateResponse, JobStatusResponse, RecommendationRequ
 
 
 settings = get_settings()
+setup_logger = logging.getLogger("accessible_travel_assistant")
 job_store = JobStore(ttl_seconds=settings.job_ttl_seconds)
 rate_limiter = InMemoryRateLimiter(
     max_requests=settings.rate_limit_max_requests,
@@ -29,6 +32,8 @@ app = FastAPI(
     version="0.2.0",
     description="Stateless accessibility-aware travel provider recommendation API.",
 )
+setup_observability(app, settings)
+add_request_logging(app)
 
 app.add_middleware(
     CORSMiddleware,
@@ -69,6 +74,17 @@ async def locations(q: str = Query(default="", max_length=80)) -> dict:
 )
 async def create_recommendation(payload: RecommendationRequest) -> JobCreateResponse:
     job = await job_store.create()
+    setup_logger.info(
+        "recommendation_job_created",
+        extra={
+            "job_id": job.job_id,
+            "quick_tag_count": len(payload.quick_tags),
+            "transport_modes": ",".join(payload.transport_modes) or "not_sure",
+            "duration_days": payload.duration_days,
+            "origin_code": payload.origin.code if payload.origin else None,
+            "destination_code": payload.destination.code if payload.destination else None,
+        },
+    )
     asyncio.create_task(_run_recommendation_job(job.job_id, payload))
     return JobCreateResponse(job_id=job.job_id, status="queued")
 
@@ -80,11 +96,24 @@ async def get_recommendation(job_id: str) -> JobStatusResponse:
 
 async def _run_recommendation_job(job_id: str, payload: RecommendationRequest) -> None:
     await job_store.set_running(job_id)
+    setup_logger.info("recommendation_job_started", extra={"job_id": job_id})
     try:
         result = await recommend(payload)
     except Exception as exc:  # noqa: BLE001 - user-facing failure state is intentional here.
+        setup_logger.exception(
+            "recommendation_job_failed",
+            extra={"job_id": job_id, "error_type": type(exc).__name__},
+        )
         await job_store.set_failed(job_id, _friendly_error(exc))
         return
+    setup_logger.info(
+        "recommendation_job_succeeded",
+        extra={
+            "job_id": job_id,
+            "result_status": result.status,
+            "provider_count": len(result.providers),
+        },
+    )
     await job_store.set_succeeded(job_id, result)
 
 
