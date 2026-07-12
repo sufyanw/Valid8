@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title" viewBox="0 0 360 120">
+  <title id="title">Lyft logo-style identifier</title>
+  <rect width="360" height="120" rx="20" fill="#ffffff"/>
+  <text x="38" y="78" font-family="Arial, Helvetica, sans-serif" font-size="64" font-weight="900" fill="#ff00bf">Lyft</text>
+  <path d="M190 40h108c14 0 25 11 25 25s-11 25-25 25H190c-14 0-25-11-25-25s11-25 25-25Z" fill="#ff00bf" opacity=".12"/>
+  <text x="190" y="70" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="800" fill="#a00078">Rider</text>
+</svg>

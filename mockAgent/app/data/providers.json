@@ -1,0 +1,255 @@
+{
+  "version": "0.2",
+  "source_checked_at": "2026-07-12",
+  "providers": [
+    {
+      "id": "delta",
+      "name": "Delta Air Lines",
+      "mode": "air",
+      "categories": ["mobility", "vision", "hearing", "sensory", "cognitive", "service_animal", "medical", "other"],
+      "accessibility_features": [
+        "wheelchair and mobility device assistance",
+        "support for blind, low-vision, deaf, and hard-of-hearing travelers",
+        "cognitive and invisible disability resources",
+        "trained service animal guidance",
+        "medical device and medication guidance",
+        "accessible service request form for some requests"
+      ],
+      "accommodation_summary": "Delta has a broad accessible-travel hub covering mobility devices, sensory/cognitive needs, service animals, medical devices, and vision/hearing assistance.",
+      "duration_relevant": {
+        "powered_mobility": "Publishes wheelchair, scooter, and assistive-device guidance; travelers should confirm battery details and device dimensions before booking.",
+        "service_animal_relief": "Service animal travel is documented; long trips require advance relief and sanitation planning with airports and Delta.",
+        "medical_equipment_medication": "Publishes medical-device and medication guidance, including portable medical equipment considerations.",
+        "seating_rest": "Special seating and assistance can be requested; long flights may still require advance confirmation of transfer, aisle-chair, and rest needs.",
+        "best_for_duration_bands": ["short", "medium", "long"],
+        "duration_notes": "Air travel can reduce total trip time, but long flights make battery, transfer, seating, and service-animal planning important."
+      },
+      "policy_url": "https://www.delta.com/us/en/accessible-travel-services/overview",
+      "booking_url": "https://www.delta.com/flight-search/book-a-flight",
+      "logo_url": "/logos/delta.svg",
+      "source_checked_at": "2026-07-12",
+      "notes": "Recommendation should still be conditional on route availability."
+    },
+    {
+      "id": "united",
+      "name": "United Airlines",
+      "mode": "air",
+      "categories": ["mobility", "vision", "hearing", "cognitive", "service_animal", "medical", "other"],
+      "accessibility_features": [
+        "accessibility and assistance travel hub",
+        "wheelchair and mobility assistance",
+        "service animal travel information",
+        "medical and assistive-device travel information",
+        "communication and airport assistance resources"
+      ],
+      "accommodation_summary": "United provides an accessibility and assistance hub for travelers needing mobility, communication, medical-device, or service-animal support.",
+      "duration_relevant": {
+        "powered_mobility": "Accessibility guidance covers mobility assistance; powered-device details should be confirmed for the aircraft and route.",
+        "service_animal_relief": "Service-animal travel is documented; long or connecting trips require relief-area planning and direct confirmation.",
+        "medical_equipment_medication": "Medical-device and assistive-device information is part of the accessibility workflow.",
+        "seating_rest": "Travelers can request assistance and seating support, but aircraft-specific constraints should be verified before booking.",
+        "best_for_duration_bands": ["short", "medium", "long"],
+        "duration_notes": "Good candidate for longer-distance air trips when the user confirms device, seating, and animal-relief details in advance."
+      },
+      "policy_url": "https://www.united.com/en/us/fly/travel/accessibility-and-assistance.html",
+      "booking_url": "https://www.united.com/en/us/book-flight/united-reservations",
+      "logo_url": "/logos/united.svg",
+      "source_checked_at": "2026-07-12",
+      "notes": "Official page is JavaScript-heavy; store URL only, not scraped text."
+    },
+    {
+      "id": "american",
+      "name": "American Airlines",
+      "mode": "air",
+      "categories": ["mobility", "vision", "hearing", "cognitive", "service_animal", "medical", "other"],
+      "accessibility_features": [
+        "special assistance request during booking or trip management",
+        "wheelchair assistance",
+        "mobility and medical device support",
+        "hearing and vision assistance",
+        "cognitive and developmental assistance",
+        "service animal process"
+      ],
+      "accommodation_summary": "American documents special assistance for wheelchair users, mobility and medical devices, vision/hearing needs, cognitive or developmental disabilities, and service animals.",
+      "duration_relevant": {
+        "powered_mobility": "Publishes mobility and medical-device guidance; powered-wheelchair battery and handling details should be confirmed.",
+        "service_animal_relief": "Service animal approval and planning may require advance action; longer flights need relief planning.",
+        "medical_equipment_medication": "Includes mobility and medical-device assistance in the special-assistance flow.",
+        "seating_rest": "Special seating can be requested for disability-related needs, including service animals, fixed legs, transfer needs, or extra space.",
+        "best_for_duration_bands": ["short", "medium", "long"],
+        "duration_notes": "Air reduces elapsed travel time, but long flights require stronger advance confirmation of seating, service-animal, and device-handling details."
+      },
+      "policy_url": "https://www.aa.com/i18n/travel-info/special-assistance/special-assistance.jsp",
+      "booking_url": "https://www.aa.com/booking/find-flights",
+      "logo_url": "/logos/american.svg",
+      "source_checked_at": "2026-07-12",
+      "notes": "Dataset captures official accommodations only; recent enforcement history should not be treated as a guarantee of service quality."
+    },
+    {
+      "id": "southwest",
+      "name": "Southwest Airlines",
+      "mode": "air",
+      "categories": ["mobility", "vision", "hearing", "cognitive", "service_animal", "medical", "other"],
+      "accessibility_features": [
+        "customers with disabilities assistance guide",
+        "wheelchair and boarding assistance",
+        "service animal guidance",
+        "medical and assistive-device travel information",
+        "communication assistance"
+      ],
+      "accommodation_summary": "Southwest provides customer-with-disabilities guidance for common air-travel assistance needs, including mobility, service animals, and communication support.",
+      "duration_relevant": {
+        "powered_mobility": "Travelers should confirm powered mobility-device handling and battery requirements directly with Southwest before booking.",
+        "service_animal_relief": "Longer routes or connections require traveler-led planning for service-animal relief areas.",
+        "medical_equipment_medication": "Medical and assistive-device needs should be declared and confirmed before travel.",
+        "seating_rest": "Boarding and seating-related support may be available, but policies and assigned-seat processes should be checked before booking.",
+        "best_for_duration_bands": ["short", "medium"],
+        "duration_notes": "Best treated as a candidate for shorter or medium air trips unless long-trip accommodation details are confirmed directly."
+      },
+      "policy_url": "https://support.southwest.com/helpcenter/s/article/Assistance-for-Customers-with-Disabilities",
+      "booking_url": "https://www.southwest.com/air/booking/",
+      "logo_url": "/logos/southwest.svg",
+      "source_checked_at": "2026-07-12",
+      "notes": "Official support page is JavaScript-heavy; store URL only, not scraped text."
+    },
+    {
+      "id": "jetblue",
+      "name": "JetBlue",
+      "mode": "air",
+      "categories": ["mobility", "vision", "hearing", "cognitive", "sensory", "service_animal", "medical", "other"],
+      "accessibility_features": [
+        "accessibility assistance page",
+        "wheelchair and airport assistance",
+        "service animal information",
+        "medical device and assistive-device travel guidance",
+        "communication and cognitive assistance resources"
+      ],
+      "accommodation_summary": "JetBlue has an accessibility-assistance hub for air travelers needing mobility, communication, service-animal, sensory/cognitive, or medical-device support.",
+      "duration_relevant": {
+        "powered_mobility": "Travelers should confirm mobility-device dimensions, battery handling, and airport assistance before travel.",
+        "service_animal_relief": "Long flights and connections require advance service-animal relief and documentation planning.",
+        "medical_equipment_medication": "Medical-device needs should be added to the trip and confirmed before departure.",
+        "seating_rest": "Seat and boarding support should be requested early; aircraft-specific constraints still apply.",
+        "best_for_duration_bands": ["short", "medium", "long"],
+        "duration_notes": "Good air candidate when the route exists and the traveler confirms long-duration device, seating, and animal needs."
+      },
+      "policy_url": "https://www.jetblue.com/at-the-airport/accessibility-assistance",
+      "booking_url": "https://www.jetblue.com/booking/flights",
+      "logo_url": "/logos/jetblue.svg",
+      "source_checked_at": "2026-07-12",
+      "notes": "Official page is JavaScript-heavy; store URL only, not scraped text."
+    },
+    {
+      "id": "alaska",
+      "name": "Alaska Airlines",
+      "mode": "air",
+      "categories": ["mobility", "vision", "hearing", "cognitive", "service_animal", "medical", "other"],
+      "accessibility_features": [
+        "accessible services information",
+        "airport accessibility and boarding assistance",
+        "mobility and assistive-device guidance",
+        "service animal guidance",
+        "communication assistance resources"
+      ],
+      "accommodation_summary": "Alaska Airlines publishes accessible-services information for airport accessibility, mobility support, service animals, and related air-travel accommodations.",
+      "duration_relevant": {
+        "powered_mobility": "Powered mobility-device details should be confirmed with Alaska before booking and again before departure.",
+        "service_animal_relief": "Service-animal handling should be confirmed in advance; relief-area planning is important for long trips and connections.",
+        "medical_equipment_medication": "Medical and assistive-device support should be declared and confirmed before travel.",
+        "seating_rest": "Boarding and seating support may be available; confirm aircraft-specific constraints for longer trips.",
+        "best_for_duration_bands": ["short", "medium", "long"],
+        "duration_notes": "Useful air candidate for routes Alaska serves, with direct confirmation required for long-duration mobility and service-animal needs."
+      },
+      "policy_url": "https://www.alaskaair.com/content/travel-info/accessible-services/airport-accessibility",
+      "booking_url": "https://www.alaskaair.com/booking/flights",
+      "logo_url": "/logos/alaska.svg",
+      "source_checked_at": "2026-07-12",
+      "notes": "Official page is JavaScript-heavy; store URL only, not scraped text."
+    },
+    {
+      "id": "amtrak",
+      "name": "Amtrak",
+      "mode": "rail",
+      "categories": ["mobility", "vision", "hearing", "cognitive", "service_animal", "medical", "other"],
+      "accessibility_features": [
+        "accessible seating and wheelchair space",
+        "accessible-space reservations",
+        "service animals permitted in passenger areas",
+        "wheeled mobility device specifications",
+        "station accessibility information",
+        "oxygen equipment guidance",
+        "companion or attendant travel information",
+        "meal-service accommodation information"
+      ],
+      "accommodation_summary": "Amtrak provides detailed accessible-travel information for accessible space, wheelchair seating, service animals, mobility devices, station access, oxygen equipment, and attendants.",
+      "duration_relevant": {
+        "powered_mobility": "Publishes wheeled mobility-device specifications and boarding/detraining procedures; confirm device size and station access.",
+        "service_animal_relief": "Service animals are permitted in passenger areas; long-distance routes require route-specific relief-stop planning.",
+        "medical_equipment_medication": "Publishes oxygen-equipment guidance and related accessible-travel request information.",
+        "seating_rest": "Accessible seats, wheelchair spaces, attendants, meal-service considerations, and sleeper options on some routes can make rail stronger for multi-day trips.",
+        "best_for_duration_bands": ["medium", "long", "multi_day"],
+        "duration_notes": "Rail may be preferable for long or multi-day travel when rest, accessible space, equipment access, and service-animal planning matter more than fastest elapsed time."
+      },
+      "policy_url": "https://www.amtrak.com/accessible-travel-services",
+      "booking_url": "https://www.amtrak.com/home.html",
+      "logo_url": "/logos/amtrak.svg",
+      "source_checked_at": "2026-07-12",
+      "notes": "Station accessibility varies and must be checked for the actual origin and destination."
+    },
+    {
+      "id": "uber",
+      "name": "Uber",
+      "mode": "rideshare",
+      "categories": ["mobility", "vision", "hearing", "service_animal", "medical", "other"],
+      "accessibility_features": [
+        "accessibility information hub",
+        "service-animal support information",
+        "wait-time fee waiver or refund process for riders with disabilities",
+        "platform accessibility feedback channels",
+        "wheelchair accessible vehicle availability in some markets"
+      ],
+      "accommodation_summary": "Uber documents platform accessibility, disability support, wait-time fee waivers/refunds, service-animal support, and accessibility feedback channels.",
+      "duration_relevant": {
+        "powered_mobility": "Wheelchair-accessible vehicle availability is market-dependent; powered-wheelchair users must verify local availability before relying on Uber.",
+        "service_animal_relief": "Service animals are relevant for point-to-point rides; long trips still need driver acceptance and break planning.",
+        "medical_equipment_medication": "Best for short local trips where the user can bring equipment into a standard or accessible vehicle.",
+        "seating_rest": "Standard rides generally do not provide rest accommodations; trip length and vehicle fit should be considered.",
+        "best_for_duration_bands": ["short", "medium"],
+        "duration_notes": "Best for local or first-mile/last-mile travel, not as the main recommendation for multi-day trips."
+      },
+      "policy_url": "https://www.uber.com/us/en/about/accessibility/",
+      "booking_url": "https://m.uber.com/",
+      "logo_url": "/logos/uber.svg",
+      "source_checked_at": "2026-07-12",
+      "notes": "Accessibility and wheelchair-accessible vehicle availability vary by market."
+    },
+    {
+      "id": "lyft",
+      "name": "Lyft",
+      "mode": "rideshare",
+      "categories": ["mobility", "vision", "hearing", "service_animal", "other"],
+      "accessibility_features": [
+        "accessibility statement and feedback process",
+        "rider accessibility and mobility messaging",
+        "availability across many US cities",
+        "service animal policy and enforcement handled through Lyft support",
+        "some local wheelchair-accessible vehicle availability"
+      ],
+      "accommodation_summary": "Lyft provides rider access through its app, publishes accessibility contact/feedback information, and offers mobility-related services that vary by city.",
+      "duration_relevant": {
+        "powered_mobility": "Wheelchair-accessible ride availability is city-dependent and should be confirmed before relying on Lyft.",
+        "service_animal_relief": "Service animals are relevant for point-to-point trips; riders should be prepared to report refusals through Lyft support.",
+        "medical_equipment_medication": "Best for local trips where equipment fits in the selected vehicle type.",
+        "seating_rest": "Standard rides generally lack rest accommodations; consider XL or other vehicle types only if they meet the need.",
+        "best_for_duration_bands": ["short", "medium"],
+        "duration_notes": "Best used for local transportation or first-mile/last-mile connections rather than multi-day primary travel."
+      },
+      "policy_url": "https://www.lyft.com/accessibility",
+      "booking_url": "https://www.lyft.com/rider",
+      "logo_url": "/logos/lyft.svg",
+      "source_checked_at": "2026-07-12",
+      "notes": "Use cautiously for mobility-device needs because accessible-vehicle availability is local."
+    }
+  ]
+}
+

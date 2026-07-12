@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title" viewBox="0 0 360 120">
+  <title id="title">Southwest Airlines logo-style identifier</title>
+  <rect width="360" height="120" rx="20" fill="#ffffff"/>
+  <path d="M67 88C39 69 32 48 45 33c12-14 31-7 41 8 10-15 29-22 41-8 13 15 6 36-22 55L86 101 67 88Z" fill="#304cb2"/>
+  <path d="M86 41c10-15 29-22 41-8 13 15 6 36-22 55l-19 13V41Z" fill="#e31b23"/>
+  <path d="M45 66h81" stroke="#f9c80e" stroke-width="8"/>
+  <text x="144" y="61" font-family="Arial, Helvetica, sans-serif" font-size="34" font-weight="800" fill="#304cb2">Southwest</text>
+  <text x="146" y="84" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="700" fill="#667085">Airlines</text>
+</svg>

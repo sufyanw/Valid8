@@ -1,0 +1,15 @@
+{
+  "name": "accessible-travel-assistant",
+  "private": true,
+  "version": "0.2.0",
+  "scripts": {
+    "build": "npm --prefix frontend install && npm --prefix frontend run build",
+    "heroku-postbuild": "npm --prefix frontend install && npm --prefix frontend run build",
+    "frontend:dev": "npm --prefix frontend run dev",
+    "frontend:preview": "npm --prefix frontend run preview"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
+

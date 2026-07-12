@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title" viewBox="0 0 360 120">
+  <title id="title">Delta Air Lines logo-style identifier</title>
+  <rect width="360" height="120" rx="20" fill="#ffffff"/>
+  <path d="M34 85 72 28l38 57H34Z" fill="#c8102e"/>
+  <path d="M72 28 90 85H54L72 28Z" fill="#8a1538"/>
+  <text x="132" y="65" font-family="Arial, Helvetica, sans-serif" font-size="42" font-weight="800" letter-spacing="2" fill="#0b2341">DELTA</text>
+  <text x="134" y="88" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="700" letter-spacing="4" fill="#687385">AIR LINES</text>
+</svg>
