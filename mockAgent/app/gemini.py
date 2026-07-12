@@ -55,7 +55,7 @@ class GeminiClient:
                         "gemini_request_started",
                         extra={"gemini_model": self.model, "attempt": attempt + 1},
                     )
-                    response = await client.post(url, params={"key": self.api_key}, json=body)
+                    response = await client.post(url, headers={"x-goog-api-key": self.api_key}, json=body)
 
                     if response.status_code == 400:
                         # Fallback for API deployments that do not accept systemInstruction or JSON mode.
